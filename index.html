@@ -6,7 +6,7 @@
 <title>PDF Tools</title>
 <style>
   :root{--bg:#f6f7f9;--card:#fff;--text:#1c1f24;--muted:#6b7280;--accent:#2563eb;--ok:#15803d;--warn:#b45309;--bad:#b91c1c;--line:#e5e7eb}
-  @media (prefers-color-scheme:dark){:root{--bg:#111318;--card:#1a1d24;--text:#e8eaed;--muted:#9aa0aa;--accent:#60a5fa;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--line:#2a2e37}}
+  :root{color-scheme:light}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
   .wrap{max-width:860px;margin:0 auto;padding:24px 16px 60px}
@@ -39,10 +39,26 @@
   .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
   .note{color:var(--muted);font-size:13px;margin-top:10px}
   .thumb{display:flex;gap:10px;align-items:center}
-  .thumb img{width:46px;height:46px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+  #ilist .thumb{display:flex !important;flex-direction:column !important;align-items:stretch !important;gap:8px}
+  #ilist .thumb img{width:100% !important;height:auto !important;max-height:420px !important;object-fit:contain !important;background:var(--bg);border-radius:8px;border:1px solid var(--line);cursor:zoom-in}
+  #ilist .item{grid-template-columns:1fr !important;padding:16px 0}
+  #ilist .ctl{justify-content:flex-end}
+  #lb{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:99}
+  #lb.on{display:flex}
+  #lb img{max-width:96vw;max-height:84vh;object-fit:contain}
+  #lbcap{color:#fff;margin:10px 0;font-size:14px;text-align:center;padding:0 12px;word-break:break-all}
+  #lb .nav{display:flex;gap:10px}
+  #lb button{background:#fff2;color:#fff;border:1px solid #fff5;border-radius:8px;padding:8px 16px;font-size:15px;cursor:pointer}
   .ctl{display:flex;gap:6px}
   .hide{display:none}
   h3{margin:0 0 10px;font-size:15px}
+  .fhead{font-weight:700;font-size:16px;padding-bottom:8px;margin-bottom:4px;border-bottom:1px solid var(--line);word-break:break-all}
+  #fm{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
+  #fm.on{display:flex}
+  #fm .box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;width:100%;max-width:380px}
+  #fm h3{margin:0 0 4px;font-size:17px}
+  #fm input{width:100%;margin:12px 0 14px}
+  #fm .acts{display:flex;gap:8px;justify-content:flex-end}
 </style>
 </head>
 <body>
@@ -72,16 +88,22 @@
         <button class="b" id="go" disabled>Compress</button>
         <button class="b sec" id="clear">Clear</button>
       </div>
-      <div class="note">Files already under the limit are left untouched. Output keeps the original file name.</div>
+      <div class="row" style="margin-top:12px">
+        <label for="fname">Folder name</label>
+        <input type="text" id="fname" value="Compressed PDFs" maxlength="80">
+      </div>
+      <div class="note">Files already under the limit are left untouched. Output keeps the original file name. All PDFs are saved inside the folder you name.</div>
     </div>
 
     <div class="card hide" id="listCard">
+      <div class="fhead hide" id="pfh"></div>
       <div id="list"></div>
       <div class="actions">
-        <button class="b" id="zip" disabled>Download all (ZIP)</button>
-        <button class="b sec" id="each" disabled>Download all separately</button>
+        <button class="b" id="folder" disabled>Download folder</button>
+        <button class="b sec" id="zip" disabled>Download as ZIP</button>
+        <button class="b sec" id="each" disabled>Download files separately</button>
       </div>
-      <div class="note">"Download all separately" may ask your browser to allow multiple downloads — click Allow.</div>
+      <div class="note" id="fnote">"Download folder" asks where to save, then creates your named folder there with all the PDFs inside (Chrome or Edge on a PC, open the website directly). Other browsers and phones get a ZIP instead.</div>
     </div>
   </section>
 
@@ -106,6 +128,11 @@
         <input type="number" id="ilimit" value="2" min="0.1" step="0.1">
       </div>
       <div class="row" style="margin-top:12px">
+        <label for="ifname">Folder name</label>
+        <input type="text" id="ifname" value="Image PDFs" maxlength="80">
+        <span class="meta">All PDFs are created inside this folder</span>
+      </div>
+      <div class="row" style="margin-top:12px">
         <label class="opt"><input type="checkbox" id="oCombined" checked> One PDF with all images</label>
         <input type="text" id="cname" value="images.pdf" aria-label="Combined file name">
       </div>
@@ -120,14 +147,26 @@
     </div>
 
     <div class="card hide" id="iresCard">
+      <div class="fhead hide" id="ifh"></div>
       <div id="ires"></div>
       <div class="actions">
-        <button class="b" id="izip">Download all (ZIP)</button>
-        <button class="b sec" id="ieach">Download all separately</button>
+        <button class="b" id="ifolder">Download folder</button>
+        <button class="b sec" id="izip">Download as ZIP</button>
+        <button class="b sec" id="ieach">Download files separately</button>
       </div>
+      <div class="note" id="ifnote">"Download folder" asks where to save, then creates your named folder there with all the PDFs inside (Chrome or Edge on a PC, open the website directly). Other browsers and phones get a ZIP instead.</div>
     </div>
   </section>
 </div>
+
+<div id="fm"><div class="box">
+  <h3>Name your folder</h3>
+  <div class="meta">The PDFs will be created inside this folder.</div>
+  <input type="text" id="fmin" maxlength="80" aria-label="Folder name" autocomplete="off">
+  <div class="acts"><button class="b sec" id="fmcancel">Cancel</button><button class="b" id="fmok">Create</button></div>
+</div></div>
+
+<div id="lb"><img id="lbimg" alt=""><div id="lbcap"></div><div class="nav"><button id="lbprev">◀ Prev</button><button id="lbclose">Close</button><button id="lbnext">Next ▶</button></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -146,15 +185,80 @@ function saveBlob(blob, name){
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
-async function zipAndSave(files, zipName){
-  const zip = new JSZip(), used = {};
-  files.forEach(({name, blob}) => {
-    let n = name;
-    if (used[n]){ n = n.replace(/(\.pdf)?$/i, ` (${used[name]++})$1`); } else used[n] = 1;
-    zip.file(n, blob);
+// remove characters not allowed in folder/file names
+const cleanName = (s, fallback) => (String(s || '').replace(/[\\/:*?"<>|\u0000-\u001f]+/g, '').replace(/[. ]+$/, '').trim()) || fallback;
+
+// make names unique inside one folder: a.pdf, a (2).pdf, a (3).pdf
+function uniqueNames(files){
+  const seen = {};
+  return files.map(({name, blob}) => {
+    let n = name, k = 1;
+    while (seen[n.toLowerCase()]){ k++; n = name.replace(/(\.pdf)?$/i, ` (${k})$1`); }
+    seen[n.toLowerCase()] = 1;
+    return {name: n, blob};
   });
-  saveBlob(await zip.generateAsync({type:'blob'}), zipName);
 }
+
+// ZIP with a top-level folder: unzipping gives <folder>/file1.pdf, file2.pdf ...
+async function zipAndSave(files, folder){
+  const zip = new JSZip();
+  const root = zip.folder(folder);
+  uniqueNames(files).forEach(({name, blob}) => root.file(name, blob));
+  saveBlob(await zip.generateAsync({type:'blob'}), folder + '.zip');
+}
+
+// Real folder on disk (Chrome/Edge desktop). Falls back to the ZIP elsewhere.
+async function saveToFolder(files, folder, noteEl){
+  if (window.top !== window.self){
+    noteEl.textContent = 'A real folder cannot be created inside a preview. Open https://rekhanthms.github.io/pdf-compressor/ directly in Chrome or Edge on a PC. Downloaded "' + folder + '.zip" for now.';
+    await zipAndSave(files, folder);
+    return;
+  }
+  if (!window.showDirectoryPicker){
+    noteEl.textContent = 'This browser (or phone) cannot create folders directly — it needs Chrome or Edge on a PC. Downloaded "' + folder + '.zip" instead; open it to get the "' + folder + '" folder.';
+    await zipAndSave(files, folder);
+    return;
+  }
+  try {
+    const parent = await window.showDirectoryPicker({mode:'readwrite'});
+    const dir = await parent.getDirectoryHandle(folder, {create:true});
+    for (const {name, blob} of uniqueNames(files)){
+      const fh = await dir.getFileHandle(name, {create:true});
+      const w = await fh.createWritable();
+      await w.write(blob);
+      await w.close();
+    }
+    noteEl.textContent = '✔ Folder "' + folder + '" created with ' + files.length + ' PDF(s) inside, in the location you picked.';
+  } catch (e){
+    if (e && e.name === 'AbortError') return; // user cancelled the picker
+    console.error(e);
+    noteEl.textContent = 'Could not save to folder (' + (e.message || e) + ') — downloading a ZIP instead.';
+    await zipAndSave(files, folder);
+  }
+}
+
+/* ---------- ask for folder name (popup) ---------- */
+let fmResolve = null, fmDefault = '';
+function askFolder(def){
+  return new Promise(res => {
+    fmResolve = res; fmDefault = def;
+    $('fmin').value = def;
+    $('fm').classList.add('on');
+    setTimeout(() => { $('fmin').focus(); $('fmin').select(); }, 50);
+  });
+}
+function closeFm(ok){
+  $('fm').classList.remove('on');
+  if (!fmResolve) return;
+  const r = fmResolve; fmResolve = null;
+  r(ok ? cleanName($('fmin').value, cleanName(fmDefault, 'PDFs')) : null);
+}
+$('fmok').onclick = () => closeFm(true);
+$('fmcancel').onclick = () => closeFm(false);
+$('fmin').addEventListener('keydown', e => {
+  if (e.key === 'Enter') closeFm(true);
+  if (e.key === 'Escape') closeFm(false);
+});
 
 /* ---------- tabs ---------- */
 function showTab(pdf){
@@ -203,8 +307,9 @@ function refresh(){
   const done = items.some(i => i.result);
   $('zip').disabled = busy || !done;
   $('each').disabled = busy || !done;
+  $('folder').disabled = busy || !done;
 }
-$('clear').onclick = () => { if (busy) return; items = []; list.innerHTML=''; refresh(); };
+$('clear').onclick = () => { if (busy) return; items = []; list.innerHTML=''; $('pfh').classList.add('hide'); refresh(); };
 function setStat(it, html, cls){
   const s = it.el.querySelector('.stat');
   s.className = 'meta stat ' + (cls||'');
@@ -267,8 +372,15 @@ async function compressOne(it, limit){
   setStat(it, `${fmt(file.size)} → <b>${fmt(best.size)}</b>` + (ok ? '' : ' — best possible, still above limit'), ok ? 'st-ok' : 'st-warn');
 }
 
+let pdfFolder = 'Compressed PDFs';
 $('go').onclick = async () => {
   const limit = Math.max(0.1, parseFloat($('limit').value) || 2) * 1048576 * 0.97;
+  const chosen = await askFolder(cleanName($('fname').value, pdfFolder));
+  if (chosen === null) return; // cancelled
+  pdfFolder = chosen;
+  $('fname').value = chosen;
+  $('pfh').textContent = '📁 ' + pdfFolder;
+  $('pfh').classList.remove('hide');
   busy = true; refresh();
   for (const it of items){
     if (it.result) continue;
@@ -289,7 +401,9 @@ $('each').onclick = async () => {
     await new Promise(r => setTimeout(r, 400));
   }
 };
-$('zip').onclick = () => zipAndSave(items.filter(i => i.result).map(i => ({name:i.file.name, blob:i.result})), 'compressed-pdfs.zip');
+const doneItems = () => items.filter(i => i.result).map(i => ({name:i.file.name, blob:i.result}));
+$('zip').onclick = () => zipAndSave(doneItems(), pdfFolder);
+$('folder').onclick = () => saveToFolder(doneItems(), pdfFolder, $('fnote'));
 
 /* =====================================================
    PART 2 — IMAGES -> PDF (combined + separate)
@@ -298,6 +412,7 @@ $('zip').onclick = () => zipAndSave(items.filter(i => i.result).map(i => ({name:
 const ILADDER = [[2400,.85],[2000,.8],[1600,.75],[1400,.65],[1200,.6],[1000,.55],[800,.5],[640,.45],[500,.4],[400,.35],[320,.3]];
 let imgs = [];      // {file, url}
 let outputs = [];   // {name, blob}
+let imgFolder = 'Image PDFs';
 let ibusy = false;
 
 wireDrop($('idrop'), $('ifile'), addImages);
@@ -317,6 +432,7 @@ function renderImgs(){
     el.className = 'item';
     el.innerHTML = `<div class="thumb"><img alt=""><div><div class="name"></div><div class="meta"></div></div></div><div class="ctl"></div>`;
     el.querySelector('img').src = im.url;
+    el.querySelector('img').onclick = () => openLb(i);
     el.querySelector('.name').textContent = (i+1) + '. ' + im.file.name;
     el.querySelector('.meta').textContent = fmt(im.file.size);
     const ctl = el.querySelector('.ctl');
@@ -333,7 +449,7 @@ $('iclear').onclick = () => {
   if (ibusy) return;
   imgs.forEach(i => URL.revokeObjectURL(i.url));
   imgs = []; outputs = [];
-  $('ires').innerHTML = ''; $('iresCard').classList.add('hide'); $('istat').textContent = '';
+  $('ires').innerHTML = ''; $('iresCard').classList.add('hide'); $('ifh').classList.add('hide'); $('istat').textContent = '';
   renderImgs();
 };
 
@@ -390,6 +506,12 @@ $('igo').onclick = async () => {
   if (!doCombined && !doSeparate){ $('istat').textContent = 'Tick at least one output option.'; return; }
   const limitMB = Math.max(0.1, parseFloat($('ilimit').value) || 2);
   const limit = limitMB * 1048576 * 0.97;
+  const chosen = await askFolder(cleanName($('ifname').value, imgFolder));
+  if (chosen === null) return; // cancelled
+  imgFolder = chosen;
+  $('ifname').value = chosen;
+  $('ifh').textContent = '📁 ' + imgFolder;
+  $('ifh').classList.remove('hide');
   ibusy = true; renderImgs();
   outputs = []; const res = $('ires'); res.innerHTML = '';
   const addRow = (name, blob, ok, note) => {
@@ -439,7 +561,28 @@ $('igo').onclick = async () => {
 $('ieach').onclick = async () => {
   for (const o of outputs){ saveBlob(o.blob, o.name); await new Promise(r => setTimeout(r, 400)); }
 };
-$('izip').onclick = () => zipAndSave(outputs, 'image-pdfs.zip');
+$('izip').onclick = () => zipAndSave(outputs, imgFolder);
+$('ifolder').onclick = () => saveToFolder(outputs, imgFolder, $('ifnote'));
+
+/* ---------- image preview (lightbox) ---------- */
+let lbi = 0;
+function openLb(i){
+  lbi = i; const im = imgs[i];
+  $('lbimg').src = im.url;
+  $('lbcap').textContent = (i+1) + ' / ' + imgs.length + ' — ' + im.file.name;
+  $('lb').classList.add('on');
+}
+function stepLb(d){ if (imgs.length) openLb((lbi + d + imgs.length) % imgs.length); }
+$('lbprev').onclick = () => stepLb(-1);
+$('lbnext').onclick = () => stepLb(1);
+$('lbclose').onclick = () => $('lb').classList.remove('on');
+$('lb').onclick = e => { if (e.target.id === 'lb') $('lb').classList.remove('on'); };
+document.addEventListener('keydown', e => {
+  if (!$('lb').classList.contains('on')) return;
+  if (e.key === 'Escape') $('lb').classList.remove('on');
+  if (e.key === 'ArrowLeft') stepLb(-1);
+  if (e.key === 'ArrowRight') stepLb(1);
+});
 
 refresh(); renderImgs();
 </script>
